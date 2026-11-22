@@ -1,4 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<script>window.coi = { coepCredentialless: function () { return true; }, quiet: true };</script>
+<script src="coi-serviceworker.js"></script>
 <title>トークモニター β</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
@@ -1981,7 +1983,7 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
   function runAudio(file) {
     if (AU.busy) { toast('いま別の録音を文字起こししている'); return; }
     if (!/^audio\//.test(file.type) && !/\.(m4a|mp3|wav|aac|ogg|webm|mp4)$/i.test(file.name)) { toast('録音ファイル（m4a・mp3・wav）を入れる'); return; }
-    AU.busy = true; AU.t0 = Date.now(); AU.name = file.name;
+    AU.busy = true; AU.t0 = Date.now(); AU.name = file.name; AU.live = [];
     $('audioPick').disabled = true; $('audioStop').hidden = false;
     auSet('「' + file.name + '」を読み込んでいる…', 0);
     decodeAudio(file).then(function (ab) {
@@ -1996,7 +1998,13 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
       var w = auWorker();
       w.onmessage = function (ev) {
         var m = ev.data;
-        if (m.type === 'progress') {
+        if (m.type === 'line') {
+          /* 終わった行から順に見せる（判定は全部終わってから） */
+          AU.live.push(m.line);
+          var box = $('transcript');
+          box.value = AU.live.map(function (l) { return fmtTs(l.start) + ' ' + (AU.dual ? (l.ch === 0 ? '営業: ' : '相手: ') : '') + l.text; }).join('\n');
+          box.scrollTop = box.scrollHeight;
+        } else if (m.type === 'progress') {
           if (m.phase === 'load') auSet((m.cached === m.done ? '文字起こしモデルを準備している ' : '文字起こしモデルを読み込んでいる（初回だけ・約160MB） ') + m.done + ' / ' + m.total, m.done / m.total * 0.3);
           else if (m.phase === 'init') auSet('文字起こしモデルを起動している…（数十秒）', 0.3);
           else auSet('文字起こししている… ' + Math.round(m.frac * 100) + '%（' + (AU.sec < 60 ? Math.round(AU.sec) + '秒' : Math.round(AU.sec / 60) + '分') + 'の録音。10分で数分かかる）', 0.3 + m.frac * 0.7);
@@ -2005,7 +2013,7 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
           var sec = Math.round((Date.now() - AU.t0) / 1000);
           if (!text.trim()) { auReset('声が拾えなかった。別の録音で試す。'); return; }
           replaceTranscript(text);
-          auReset('「' + AU.name + '」を文字起こしした（' + sec + '秒）。' + (AU.dual ? '左右のチャンネルで営業と相手を分けた。逆なら「トーク担当はどの話者か」で入れ替える。' : ''));
+          auReset('「' + AU.name + '」を文字起こしした（' + sec + '秒・' + (m.threads > 1 ? m.threads + 'コアで並列' : '1コア') + '）。' + (AU.dual ? '左右のチャンネルで営業と相手を分けた。逆なら「トーク担当はどの話者か」で入れ替える。' : ''));
           if (!AU.dual && S.sample) runSplit();
           else if (!AU.dual) toast('話者は分かれていない。必要なら発言の頭に「営業: 」「相手: 」を付ける');
         } else if (m.type === 'error') {

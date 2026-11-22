@@ -1,12 +1,14 @@
 // トークモニター 録音→文字起こし ワーカー
 // ReazonSpeech k2 v2（日本語 zipformer transducer, int8）を onnxruntime-web でブラウザ内実行。録音は外に出ない。
 import * as ort from './ort.js';
-import { featuresKaldi, transducerGreedy, parseTokens, chunks } from './core.js';
+import { featuresKaldi, transducerGreedyBatch, parseTokens, chunks } from './core.js';
 
 const BASE = new URL('./', import.meta.url).href;
 const VER = 'reazon-k2v2-int8-v1', ENC_PARTS = 8, PAD = 8000; // 0.5秒の無音を前後に足す
 ort.env.wasm.wasmPaths = { mjs: BASE + 'ort-wasm.js', wasm: BASE + 'ort-wasm.wasm' };
-ort.env.wasm.numThreads = 1;
+// 複数コア：ページが cross-origin isolated（coi-serviceworker.js）のときだけスレッドを使える
+const THREADS = self.crossOriginIsolated ? Math.max(1, Math.min(4, navigator.hardwareConcurrency || 1)) : 1;
+ort.env.wasm.numThreads = THREADS;
 ort.env.wasm.proxy = false;
 
 let enc = null, dec = null, join = null, tokens = null, unk = -1;
@@ -70,7 +72,7 @@ async function load() {
   join = await ort.InferenceSession.create(new Uint8Array(bufs[ENC_PARTS + 1]), opt);
 }
 
-async function transcribe(x, onChunk) {
+async function transcribe(x, onChunk, onLine) {
   const cs = chunks(x, 0.4, 12), lines = [];
   for (let i = 0; i < cs.length; i++) {
     const c = cs[i];
@@ -82,9 +84,9 @@ async function transcribe(x, onChunk) {
       x_lens: new ort.Tensor('int64', BigInt64Array.from([BigInt(T)]), [1]),
     });
     const eo = r.encoder_out;
-    const tk = await transducerGreedy(ort, dec, join, eo.data, eo.dims[1], eo.dims[2], tokens, 0, unk);
+    const tk = await transducerGreedyBatch(ort, dec, join, eo.data, eo.dims[1], eo.dims[2], tokens, 0, unk);
     const text = tk.map((t) => t.s).join('').replace(/▁/g, ' ').trim();
-    if (text) lines.push({ start: c.s / 16000, text });
+    if (text) { const l = { start: c.s / 16000, text }; lines.push(l); onLine(l); }
     onChunk(i + 1, cs.length);
   }
   return lines;
@@ -102,12 +104,12 @@ self.onmessage = async (ev) => {
       const x = channels[ch];
       const lines = await transcribe(x, (d, n) => {
         post({ type: 'progress', phase: 'asr', frac: (doneSec + (x.length / 16000) * d / n) / totalSec });
-      });
+      }, (l) => post({ type: 'line', line: { start: l.start, text: l.text, ch } }));
       doneSec += x.length / 16000;
       lines.forEach((l) => { l.ch = ch; out.push(l); });
     }
     out.sort((a, b) => a.start - b.start);
-    post({ type: 'done', lines: out, ms: Date.now() - t0 });
+    post({ type: 'done', lines: out, ms: Date.now() - t0, threads: THREADS });
   } catch (e) {
     post({ type: 'error', message: String(e && e.message || e) });
   }

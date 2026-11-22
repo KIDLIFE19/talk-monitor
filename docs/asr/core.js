@@ -208,6 +208,38 @@ export async function transducerGreedy(ort, dec, join, enc, U, C, tokens, offset
   return res;
 }
 
+// 上と同じ結果を、joiner をまとめて呼んで速く出す。次のトークンが出るまで decoder_out は変わらないので、
+// 残りのフレームを B 個ずつ一度に joiner に通し、最初に blank 以外が出たフレームまで進める。
+export async function transducerGreedyBatch(ort, dec, join, enc, U, C, tokens, offsetSec, unk, B = 32) {
+  const ctx = [0, 0];
+  const runDec = async () => (await dec.run({ y: new ort.Tensor('int64', BigInt64Array.from(ctx.map(BigInt)), [1, 2]) })).decoder_out.data;
+  let dout = await runDec();
+  const res = [];
+  let u = 0;
+  while (u < U) {
+    const n = Math.min(B, U - u);
+    const dRep = new Float32Array(n * C);
+    for (let i = 0; i < n; i++) dRep.set(dout, i * C);
+    const lg = (await join.run({
+      encoder_out: new ort.Tensor('float32', enc.subarray(u * C, (u + n) * C), [n, C]),
+      decoder_out: new ort.Tensor('float32', dRep, [n, C]),
+    })).logit.data;
+    const V = lg.length / n;
+    let hit = -1, hitTok = 0;
+    for (let i = 0; i < n; i++) {
+      let best = 0, bv = -Infinity; const o = i * V;
+      for (let v = 0; v < V; v++) if (lg[o + v] > bv) { bv = lg[o + v]; best = v; }
+      if (best !== 0 && best !== unk) { hit = i; hitTok = best; break; }
+    }
+    if (hit < 0) { u += n; continue; }
+    res.push({ t: offsetSec + (u + hit) * 0.04, s: tokens[hitTok] });
+    ctx[0] = ctx[1]; ctx[1] = hitTok;
+    dout = await runDec();
+    u += hit + 1;
+  }
+  return res;
+}
+
 // tokens (with times) → lines, new line on a pause longer than gap sec
 export function tokLines(toks, startSec, gap = 0.5) {
   const lines = []; let cur = null, last = -1;
