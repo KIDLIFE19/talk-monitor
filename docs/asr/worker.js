@@ -1,7 +1,7 @@
 // トークモニター 録音→文字起こし ワーカー
 // ReazonSpeech k2 v2（日本語 zipformer transducer, int8）を onnxruntime-web でブラウザ内実行。録音は外に出ない。
 import * as ort from './ort.js';
-import { featuresKaldi, transducerGreedyBatch, parseTokens, chunks } from './core.js';
+import { featuresKaldi, transducerGreedyBatch, parseTokens, chunks, windows, partLines } from './core.js';
 
 const BASE = new URL('./', import.meta.url).href;
 const VER = 'reazon-k2v2-int8-v1', ENC_PARTS = 8, PAD = 8000; // 0.5秒の無音を前後に足す
@@ -72,22 +72,24 @@ async function load() {
   join = await ort.InferenceSession.create(new Uint8Array(bufs[ENC_PARTS + 1]), opt);
 }
 
+// 行の切れ目は短い間（LINE_GAP 秒）で取り、認識は近い区間をまとめた窓（前後の文脈つき）で行う。
+// 話者が入れ替わるときの短い間でも行が分かれるので、1行に営業と相手が混ざりにくい。
+const LINE_GAP = 0.25, JOIN_GAP = 0.8, MAX_WIN = 12;
 async function transcribe(x, onChunk, onLine) {
-  const cs = chunks(x, 0.4, 12), lines = [];
-  for (let i = 0; i < cs.length; i++) {
-    const c = cs[i];
-    const seg = new Float32Array(c.e - c.s + 2 * PAD);
-    seg.set(x.subarray(c.s, c.e), PAD);
+  const ws = windows(chunks(x, LINE_GAP, MAX_WIN), JOIN_GAP, MAX_WIN), lines = [];
+  for (let i = 0; i < ws.length; i++) {
+    const w = ws[i];
+    const seg = new Float32Array(w.e - w.s + 2 * PAD);
+    seg.set(x.subarray(w.s, w.e), PAD);
     const { data, T } = featuresKaldi(seg);
     const r = await enc.run({
       x: new ort.Tensor('float32', data, [1, T, 80]),
       x_lens: new ort.Tensor('int64', BigInt64Array.from([BigInt(T)]), [1]),
     });
     const eo = r.encoder_out;
-    const tk = await transducerGreedyBatch(ort, dec, join, eo.data, eo.dims[1], eo.dims[2], tokens, 0, unk);
-    const text = tk.map((t) => t.s).join('').replace(/▁/g, ' ').trim();
-    if (text) { const l = { start: c.s / 16000, text }; lines.push(l); onLine(l); }
-    onChunk(i + 1, cs.length);
+    const tk = await transducerGreedyBatch(ort, dec, join, eo.data, eo.dims[1], eo.dims[2], tokens, (w.s - PAD) / 16000, unk);
+    for (const l of partLines(tk, w.parts)) { lines.push(l); onLine(l); }
+    onChunk(i + 1, ws.length);
   }
   return lines;
 }
