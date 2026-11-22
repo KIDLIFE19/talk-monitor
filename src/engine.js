@@ -76,12 +76,12 @@ var TMEngine = (function () {
     return { text: out, fixes: Object.keys(fixes).map(function (k) { return fixes[k]; }) };
   }
 
-  var SP_RE = /^\s*(?:[\[(]?\d{1,2}:\d{2}(?::\d{2})?[\])]?\s*)?([^\s:「」。、,.]{1,14}?)\s*:\s*(.*)$/;
+  var SP_RE = /^\s*(?:[\[(]?\d{1,2}:\d{2}(?::\d{2})?[\])]?\s*)?([^\s:「」。、,.\[\]()（）]{1,14}?)\s*:\s*(.*)$/;
   function parseSpeakers(text) {
     var lines = text.split('\n'), counts = {}, n = 0;
     lines.forEach(function (ln) {
       var m = SP_RE.exec(ln);
-      if (m && !/^\d+$/.test(m[1])) { counts[m[1]] = (counts[m[1]] || 0) + 1; n++; }
+      if (m && !/^\d/.test(m[1])) { counts[m[1]] = (counts[m[1]] || 0) + 1; n++; }
     });
     var labels = Object.keys(counts);
     if (labels.length < 2 || labels.length > 4 || n < 2) {

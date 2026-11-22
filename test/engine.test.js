@@ -36,3 +36,21 @@ test('辞書で誤認識を正式な用語に読み替える', () => {
   const res = E.analyze('営業: アイブイアールで自動化します', cfg);
   assert.ok(res.dictFixes.some(f => f.to === 'IVR'));
 });
+
+test('時刻付きで話者なしの文字起こしは、時刻を話者と読み違えない', () => {
+  const text = [
+    '[00:05] もしもし株式会社サンプルの山田と申します',
+    '[01:23] メールアドレスというかフォームになっちゃうんだけど',
+    '[01:46] 承知いたしました',
+    '[02:00] ありがとう'
+  ].join('\n');
+  const r = E.analyze(text, {});
+  assert.deepStrictEqual(r.labels, []);
+  assert.strictEqual(r.separated, false);
+});
+
+test('時刻付きで話者ありなら、話者で分ける', () => {
+  const text = '[00:05] 営業: 山田と申します\n[00:09] 相手: はい\n[00:12] 営業: 承知いたしました';
+  const r = E.analyze(text, {});
+  assert.deepStrictEqual(r.labels.sort(), ['営業', '相手'].sort());
+});

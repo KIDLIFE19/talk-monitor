@@ -130,6 +130,13 @@ details.box>.in{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
 .turn{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;padding-left:10px;border-left:3px solid var(--line)}
 .turn.agent{border-left-color:var(--accent)}
 .turn .sp{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.msplit{border:1px solid var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:6px}
+.msplit .mlist{display:flex;flex-direction:column;gap:4px;max-height:380px;overflow:auto;padding-right:4px}
+.msplit .ml{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.5}
+.msplit .ml button{flex:none;min-width:52px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:3px 8px;font-size:12px;font-weight:700}
+.msplit .ml.agent button{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.msplit .ml .ts{flex:none;color:var(--muted);font-size:12px;padding-top:2px}
+.msplit .ml.agent .tx{font-weight:700}
 mark{color:inherit;border-radius:2px;padding:0 1px}
 .m-ng{background:var(--ng-bg);box-shadow:inset 0 -2px 0 var(--ng)}
 .m-vb{background:var(--warn-bg);box-shadow:inset 0 -2px 0 var(--warn)}
@@ -261,8 +268,10 @@ textarea.short{min-height:84px}
         <div class="chiprow" id="splitRow" hidden>
           <span class="hint" id="splitHint"></span>
           <button type="button" id="splitBtn">AIで話者を分ける</button>
+          <button type="button" id="manualBtn" hidden>手で分ける</button>
           <button type="button" id="splitUndo" hidden>分ける前に戻す</button>
         </div>
+        <div class="msplit" id="manualBox" hidden></div>
         <div class="row2">
           <label for="agentSel" id="agentRow" hidden>トーク担当はどの話者か<select id="agentSel"></select></label>
           <label class="check" for="irrToggle"><input type="checkbox" id="irrToggle"> イレギュラー扱いにする（クレーム・言葉が荒い相手）</label>
@@ -442,12 +451,12 @@ var TMEngine = (function () {
     return { text: out, fixes: Object.keys(fixes).map(function (k) { return fixes[k]; }) };
   }
 
-  var SP_RE = /^\s*(?:[\[(]?\d{1,2}:\d{2}(?::\d{2})?[\])]?\s*)?([^\s:「」。、,.]{1,14}?)\s*:\s*(.*)$/;
+  var SP_RE = /^\s*(?:[\[(]?\d{1,2}:\d{2}(?::\d{2})?[\])]?\s*)?([^\s:「」。、,.\[\]()（）]{1,14}?)\s*:\s*(.*)$/;
   function parseSpeakers(text) {
     var lines = text.split('\n'), counts = {}, n = 0;
     lines.forEach(function (ln) {
       var m = SP_RE.exec(ln);
-      if (m && !/^\d+$/.test(m[1])) { counts[m[1]] = (counts[m[1]] || 0) + 1; n++; }
+      if (m && !/^\d/.test(m[1])) { counts[m[1]] = (counts[m[1]] || 0) + 1; n++; }
     });
     var labels = Object.keys(counts);
     if (labels.length < 2 || labels.length > 4 || n < 2) {
@@ -896,7 +905,7 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
   function defaultRules() { return { apologyLimit: 2, passLine: 6, extraKeigo: [], extraRough: [], ignoreTerms: [] }; }
 
   var S = { products: [], terms: [], calls: [], rules: defaultRules(), db: null, sample: null };
-  var UI = { tab: 'monitor', productId: '__demo', agentLabel: null, overrides: {}, sample: 'ng', res: null, sc: null, openProd: {}, termScope: '', histTalker: '', aiCtl: null, dev: null, devCtl: null, devBusy: false, splitCtl: null, splitUndo: null, pasteText: null };
+  var UI = { tab: 'monitor', productId: '__demo', agentLabel: null, overrides: {}, sample: 'ng', res: null, sc: null, openProd: {}, termScope: '', histTalker: '', aiCtl: null, dev: null, devCtl: null, devBusy: false, splitCtl: null, splitUndo: null, manual: null, pasteText: null };
 
   var STATE = { ok: 'OK', warn: '要確認', ng: 'NG' };
   var VERDICT = { pass: '合格', fix: '要改善', retrain: 'もう一度やろうか？' };
@@ -1268,14 +1277,18 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
   /* 話者を分けるボタンと、逸脱チェックの注意書き */
   function renderAux() {
     var res = UI.res, p = curProduct(), ai = !!S.sample;
-    var canSplit = ai && !UI.sample && !res.empty && !res.labels.length;
-    var undo = ai && UI.splitUndo != null;
-    $('splitRow').hidden = !(canSplit || undo);
+    var base = !UI.sample && !res.empty && !res.labels.length;
+    if (UI.manual && (!base || $('transcript').value !== UI.manual.raw)) closeManual();
+    var canSplit = ai && base, canManual = base && !UI.manual;
+    var undo = UI.splitUndo != null;
+    $('splitRow').hidden = !(canSplit || canManual || undo);
     $('splitBtn').hidden = !canSplit;
+    $('manualBtn').hidden = !canManual;
     $('splitUndo').hidden = !undo;
-    $('splitHint').textContent = canSplit
-      ? '話者が付いていない。営業と相手を分けると、判定が正確になる。'
-      : 'AIが話者を付けた。違っていたら、上の文字起こしを直接直せる。';
+    $('splitHint').textContent = base
+      ? (ai ? '話者が付いていない。営業と相手を分けると、判定が正確になる。'
+            : '話者が付いていない。「手で分ける」で営業と相手を振り分けると、判定が正確になる。')
+      : '話者を付けた。違っていたら「分ける前に戻す」か、上の文字起こしを直接直せる。';
     $('devPanel').hidden = !ai;
     var basis = hasBasis(p), msg = '';
     if (!basis) msg = '「' + p.name + '」には基準がまだない。「辞書・ルール」でスクリプトを貼ると判定できる。';
@@ -1357,6 +1370,71 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
       var msg = aiErrMsg(e, '処理');
       if (msg === null) aiOff(); else if (msg) toast(msg);
     }).then(function () { btn.disabled = false; btn.textContent = 'AIで話者を分ける'; });
+  }
+
+  /* ---------- 話者を手で分ける ---------- */
+  /* AIが使えない場所（GitHub Pages など）向け。言い回しから仮に振り分け、1行ずつ押して直す */
+  var MS_AGENT = /申し(?:ます|まし)|させて(?:いただ|頂)|いただけ|でしょうか|承知|かしこまり|ございま|恐れ入|お忙しい(?:ところ|中)|ご案内|ご紹介|ご提案|弊社|お電話|お送り|お願いできれば|よろしいでしょうか/g;
+  var MS_CUST = /^(?:はい|ええ|うん|あー|ああ|そう|なるほど|大丈夫|ありがと|いいよ|いいです|結構|わかりました|分かりました|了解)|うち[はのでも]|ウチ|いらない|要らない|間に合って|忙しいんだ|社長の方|担当の者/;
+  function bigrams(t) {
+    var s = String(t || '').replace(/[\s、。,.!?！？「」]/g, ''), out = [];
+    for (var i = 0; i + 1 < s.length; i++) out.push(s.slice(i, i + 2));
+    return out;
+  }
+  function guessSpeakers(units) {
+    var script = String((curProduct() || {}).script || ''), set = null;
+    if (script.length > 40) { set = {}; bigrams(script).forEach(function (b) { set[b] = 1; }); }
+    var prev = null;
+    return units.map(function (u) {
+      var m = TS_RE.exec(u), body = m ? u.slice(m[0].length) : u;
+      var sc = (body.match(MS_AGENT) || []).length * 2;
+      if (MS_CUST.test(body)) sc -= 2;
+      if (body.length <= 8) sc -= 1;
+      if (set) {
+        var bg = bigrams(body), hit = bg.filter(function (b) { return set[b]; }).length;
+        if (bg.length >= 6 && hit / bg.length >= 0.35) sc += 2;
+      }
+      var sp = sc > 0 ? '営業' : sc < 0 ? '相手' : (prev === '相手' ? '営業' : '相手');
+      prev = sp;
+      return sp;
+    });
+  }
+  function openManual() {
+    var raw = $('transcript').value, units = splitUnits(raw);
+    if (units.length < 2) { toast('1行につながった文字起こしは分けられない。発言ごとに改行されたものを貼る'); return; }
+    if (units.length > 500) { toast('文字起こしが長すぎる。通話を分けて貼る'); return; }
+    UI.manual = { raw: raw, units: units, sp: guessSpeakers(units) };
+    renderManual();
+    renderAux();
+  }
+  function closeManual() { UI.manual = null; $('manualBox').hidden = true; $('manualBox').innerHTML = ''; }
+  function renderManual() {
+    var M = UI.manual, box = $('manualBox');
+    if (!M) return;
+    var na = M.sp.filter(function (x) { return x === '営業'; }).length;
+    box.innerHTML = '<span class="hint">言い回しから仮に振り分けた。違う行は左のボタンを押すと 営業⇄相手 が切り替わる（営業 ' + na + '行・相手 ' + (M.sp.length - na) + '行）。</span>' +
+      '<div class="mlist">' + M.units.map(function (u, i) {
+        var m = TS_RE.exec(u), body = m ? u.slice(m[0].length) : u, a = M.sp[i] === '営業';
+        return '<div class="ml ' + (a ? 'agent' : 'cust') + '"><button type="button" data-msp="' + i + '">' + M.sp[i] + '</button>' +
+          (m ? '<span class="ts">' + esc(m[1]) + '</span>' : '') + '<span class="tx">' + esc(body) + '</span></div>';
+      }).join('') + '</div>' +
+      '<div class="chiprow"><button type="button" class="btn primary" id="msApply">これで判定する</button>' +
+      '<button type="button" id="msSwap">全部入れ替える</button><button type="button" id="msCancel">やめる</button></div>';
+    box.hidden = false;
+  }
+  function applyManual() {
+    var M = UI.manual;
+    if (!M) return;
+    if ($('transcript').value !== M.raw) { closeManual(); renderAux(); toast('文字起こしが変わったので、振り分けをやめた'); return; }
+    var turns = [];
+    M.sp.forEach(function (sp, i) { if (!i || sp !== M.sp[i - 1]) turns.push([i, sp]); });
+    var text = applySplit(M.units, { turns: turns });
+    if (!text) { toast('営業と相手の両方が要る。1行以上は相手にする'); return; }
+    $('transcript').value = text;
+    UI.splitUndo = M.raw; UI.sample = null; UI.overrides = {}; UI.agentLabel = '営業'; clearDev();
+    closeManual();
+    analyzeNow();
+    toast('話者を分けて判定した');
   }
 
   /* ---------- 説明の逸脱チェック ---------- */
@@ -1829,6 +1907,17 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
     else if (b.id === 'pasteYes') { var pt = UI.pasteText; closeAsk(); if (pt != null) replaceTranscript(pt); }
     else if (b.id === 'pasteNo') closeAsk();
     else if (b.id === 'splitBtn') runSplit();
+    else if (b.id === 'manualBtn') openManual();
+    else if (d.msp != null && UI.manual) {
+      var mi = +d.msp; UI.manual.sp[mi] = UI.manual.sp[mi] === '営業' ? '相手' : '営業';
+      var keep = $('manualBox').querySelector('.mlist').scrollTop;
+      renderManual(); $('manualBox').querySelector('.mlist').scrollTop = keep;
+    }
+    else if (b.id === 'msSwap' && UI.manual) {
+      UI.manual.sp = UI.manual.sp.map(function (x) { return x === '営業' ? '相手' : '営業'; }); renderManual();
+    }
+    else if (b.id === 'msApply') applyManual();
+    else if (b.id === 'msCancel') { closeManual(); renderAux(); }
     else if (b.id === 'splitUndo') {
       if (UI.splitUndo == null) return;
       $('transcript').value = UI.splitUndo;
@@ -2015,7 +2104,7 @@ if (typeof module !== 'undefined') module.exports = TMDemo;
           replaceTranscript(text);
           auReset('「' + AU.name + '」を文字起こしした（' + sec + '秒・' + (m.threads > 1 ? m.threads + 'コアで並列' : '1コア') + '）。' + (AU.dual ? '左右のチャンネルで営業と相手を分けた。逆なら「トーク担当はどの話者か」で入れ替える。' : ''));
           if (!AU.dual && S.sample) runSplit();
-          else if (!AU.dual) toast('話者は分かれていない。必要なら発言の頭に「営業: 」「相手: 」を付ける');
+          else if (!AU.dual) { openManual(); if (UI.manual) toast('営業と相手を仮に振り分けた。違う行だけ押して直し、「これで判定する」'); }
         } else if (m.type === 'error') {
           auReset('文字起こしに失敗した：' + m.message);
         }
