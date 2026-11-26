@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>AI積立くん（Amazonインスパイア版）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#E9EBEF;display:flex;justify-content:center}
+a{color:#1F5FBF}a:hover{color:#123E80}
+</style>
+</head>
+<body>
+<div style="width: 390px; min-height: 1460px; box-sizing: border-box; background: #F4F5F7; font-family: 'Noto Sans JP', sans-serif; color: #16181D; display: flex; flex-direction: column">
+
+<header style="background: #16181D; color: #FFFFFF; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" fill="none" stroke="#F2A93B" stroke-width="2"></rect><path d="M8 18 L12 13 L16 15 L20 9" fill="none" stroke="#F2A93B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 18px; font-weight: 700; letter-spacing: 0.02em">AI積立くん</span>
+<span style="font-size: 11px; color: #C9CDD4">迷わず、続ける。</span>
+</div>
+</div>
+<button aria-label="メニュー" style="width: 44px; height: 44px; border: none; background: transparent; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M3 6h16M3 11h16M3 16h16" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"></path></svg></button>
+</header>
+
+<main style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+
+<section aria-label="今月の答え" style="background: #FFFFFF; border: 1px solid #DADDE3; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 13px; color: #4A505A">12月のAI積立くんの答え</span>
+<span style="font-size: 12px; font-weight: 500; color: #1D5A2E; background: #E3F2E7; border-radius: 999px; padding: 4px 10px">通常の月</span>
+</div>
+<p style="margin: 0; font-size: 28px; font-weight: 700; line-height: 1.3">今月も積立で。</p>
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-size: 15px; color: #4A505A">ビットコイン（BTC）</span>
+<span style="font-size: 32px; font-weight: 700; color: #1F5FBF">1万円</span>
+</div>
+<p style="margin: 0; font-size: 13px; color: #4A505A">積立日：毎月1日　次回 12月1日（月）</p>
+<button style="height: 52px; border: none; border-radius: 10px; background: #F2A93B; color: #16181D; font-family: inherit; font-size: 17px; font-weight: 700">今月の積立をした</button>
+<a href="#record" style="font-size: 14px; text-align: center; padding: 8px 0">記録を見る</a>
+</section>
+
+<section aria-label="続けた月数" style="background: #FFFFFF; border: 1px solid #DADDE3; border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; color: #4A505A">積立を続けた月数</span>
+<span style="font-size: 36px; font-weight: 700; line-height: 1.1">119<span style="font-size: 16px; font-weight: 500; margin-left: 4px">か月</span></span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right">
+<span style="font-size: 12px; color: #4A505A">止めずに続けた場合の目安</span>
+<span style="font-size: 22px; font-weight: 700; color: #1F5FBF">約10倍</span>
+<span style="font-size: 11px; color: #5F6672">2017年から月1万円・ドル建て・見本</span>
+</div>
+</section>
+
+<section aria-label="BTCの1年" style="background: #FFFFFF; border: 1px solid #DADDE3; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<span style="font-size: 14px; font-weight: 500">BTCの直近1年</span>
+<span style="font-size: 13px; color: #4A505A">約1,199万円</span>
+</div>
+<svg width="326" height="96" viewBox="0 0 326 96" role="img" aria-label="ビットコインの直近1年の価格推移。1年高値から約28%下にいる">
+<line x1="0" y1="6" x2="326" y2="6" stroke="#9AA0AA" stroke-width="1" stroke-dasharray="3 4"></line>
+<polyline points="0.0,11.0 2.7,6.0 5.5,17.7 8.2,27.3 11.0,32.3 13.7,44.5 16.4,39.7 19.2,33.2 21.9,32.5 24.7,36.2 27.4,33.7 30.1,30.3 32.9,38.1 35.6,41.7 38.4,37.8 41.1,39.4 43.8,39.7 46.6,40.0 49.3,37.1 52.1,31.4 54.8,32.5 57.5,34.1 60.3,25.0 63.0,26.2 65.7,37.7 68.5,35.7 71.2,38.0 74.0,44.6 76.7,58.5 79.4,65.5 82.2,72.4 84.9,73.1 87.7,73.1 90.4,73.1 93.1,76.5 95.9,79.7 98.6,74.9 101.4,76.4 104.1,66.0 106.8,75.8 109.6,71.3 112.3,69.5 115.1,62.5 117.8,71.1 120.5,74.7 123.3,68.6 126.0,77.5 128.8,74.4 131.5,76.8 134.2,73.4 137.0,68.5 139.7,69.8 142.5,62.3 145.2,64.1 147.9,56.1 150.7,57.2 153.4,59.6 156.2,56.2 158.9,53.2 161.6,52.9 164.4,49.3 167.1,54.2 169.8,56.3 172.6,58.8 175.3,61.1 178.1,57.9 180.8,64.4 183.5,68.6 186.3,82.2 189.0,83.2 191.8,86.4 194.5,81.1 197.2,78.9 200.0,82.8 202.7,82.0 205.5,89.6 208.2,90.0 210.9,89.1 213.7,83.5 216.4,83.1 219.2,81.7 221.9,85.0 224.6,82.0 227.4,79.7 230.1,80.0 232.9,79.4 235.6,82.0 238.3,84.1 241.1,81.7 243.8,80.3 246.6,82.0 249.3,82.9 252.0,83.9 254.8,72.3 257.5,58.2 260.3,55.6 263.0,56.9 265.7,57.6 268.5,53.5 271.2,54.6 273.9,59.2 276.7,58.7 279.4,59.9 282.2,50.7 284.9,41.7 287.6,45.6 290.4,46.6 293.1,44.2 295.9,41.2 298.6,47.0 301.3,47.6 304.1,47.3 306.8,50.4 309.6,47.6 312.3,50.9 315.0,52.9 317.8,56.8 320.5,56.0 323.3,52.1 326.0,60.3" fill="none" stroke="#1F5FBF" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+<circle cx="326" cy="60.3" r="4" fill="#1F5FBF"></circle>
+</svg>
+<span style="font-size: 12px; color: #5F6672">点線＝1年の高値。今は高値から約28%下。</span>
+</section>
+
+<section aria-label="長期積立の順番" style="background: #FFFFFF; border: 1px solid #DADDE3; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 16px; font-weight: 700">AI積立くんが考えた、長期積立の順番</span>
+<span style="font-size: 12px; color: #5F6672">2017〜2023年の各年1月から毎月同じ額を積み立てた場合の、今の価値（中央値・ドル建て）</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 15px; font-weight: 700">1　ビットコイン</span><span style="font-size: 15px; font-weight: 700">2.6倍</span></div>
+<div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 100%; height: 8px; background: #1F5FBF; border-radius: 4px"></div></div>
+<span style="font-size: 12px; color: #4A505A">一番悪い年に始めても 1.4倍</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 15px; font-weight: 500">2　イーサリアム</span><span style="font-size: 15px; font-weight: 500">2.1倍</span></div>
+<div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 81%; height: 8px; background: #6E9BE0; border-radius: 4px"></div></div>
+<span style="font-size: 12px; color: #4A505A">一番悪い年に始めると 0.95倍（元本割れ）</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 15px; font-weight: 500">3　銀</span><span style="font-size: 15px; font-weight: 500">1.9倍</span></div>
+<div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 71%; height: 8px; background: #A9B0BA; border-radius: 4px"></div></div>
+<span style="font-size: 12px; color: #4A505A">一番悪い年に始めても 1.5倍</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 15px; font-weight: 500">4　金</span><span style="font-size: 15px; font-weight: 500">1.8倍</span></div>
+<div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 70%; height: 8px; background: #C9A24A; border-radius: 4px"></div></div>
+<span style="font-size: 12px; color: #4A505A">ぶれが一番小さい（1.5〜2.2倍）</span>
+</div>
+</section>
+
+<section aria-label="その他" style="background: #FFFFFF; border: 1px solid #DADDE3; border-radius: 12px; display: flex; flex-direction: column">
+<a href="#limit" style="min-height: 56px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; color: #16181D; text-decoration: none; border-bottom: 1px solid #EEF0F3">
+<span style="display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 500">余剰金で単発で入れたい時</span><span style="font-size: 12px; color: #5F6672">指値の目安を一つだけ表示</span></span>
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="#5F6672" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<a href="#alert" style="min-height: 56px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; color: #16181D; text-decoration: none; border-bottom: 1px solid #EEF0F3">
+<span style="display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 500">大事件の時の急落アラート</span><span style="font-size: 12px; color: #1D5A2E">いまは平常（出番なし）</span></span>
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="#5F6672" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<a href="#record" style="min-height: 56px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; color: #16181D; text-decoration: none">
+<span style="display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 500">積立の記録</span><span style="font-size: 12px; color: #5F6672">積立した月に印がつくカレンダー</span></span>
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="#5F6672" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+</section>
+
+<section aria-label="注意" style="background: #FFF6E5; border: 1px solid #F0D29A; border-radius: 12px; padding: 14px 16px">
+<p style="margin: 0; font-size: 13px; line-height: 1.7; color: #5A3E05">※これは利益を確実にするものではありません。過去のデータにもとづく目安で、元本を割ることもあります。最終判断はご自身で。</p>
+</section>
+
+<p style="margin: 0; font-size: 11px; color: #5F6672; text-align: center; padding-bottom: 8px">データ：CoinGecko・Alpha Vantage（2026年11月時点・見本の数値を含む）</p>
+</main>
+</div>
+</body>
+</html>
